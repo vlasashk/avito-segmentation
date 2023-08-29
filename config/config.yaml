@@ -1,0 +1,7 @@
+env: "local"
+storage_server:
+  address: "localhost:5432"
+http_server:
+  address: "localhost:8090"
+  timeout: 4s
+  idle_timeout: 60s
