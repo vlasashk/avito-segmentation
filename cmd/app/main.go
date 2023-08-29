@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"github.com/vlasashk/avito-segmentation/internal/config"
+	"github.com/vlasashk/avito-segmentation/internal/model"
 )
 
 func main() {
 	cfg := config.ParseConfig()
-	fmt.Println(cfg)
+	log := model.InitLogger(cfg.Env)
+	log.Info("Starting application")
 }
