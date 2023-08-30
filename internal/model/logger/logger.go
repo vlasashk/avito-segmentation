@@ -1,4 +1,4 @@
-package model
+package logger
 
 import (
 	"log/slog"
@@ -23,4 +23,11 @@ func InitLogger(env string) *slog.Logger {
 		)
 	}
 	return log
+}
+
+func Err(err error) slog.Attr {
+	return slog.Attr{
+		Key:   "error",
+		Value: slog.StringValue(err.Error()),
+	}
 }
