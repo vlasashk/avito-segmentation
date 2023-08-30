@@ -16,7 +16,6 @@ func New(ctx context.Context) (*PostgresDB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connection pool: %v\n", err)
 	}
-
 	pgInstance := &PostgresDB{dbPool}
 	if err = pgInstance.Migrate(ctx); err != nil {
 		return nil, err
@@ -31,10 +30,10 @@ func (pg *PostgresDB) DropDB(ctx context.Context) error {
 		}
 		query, err := os.ReadFile(os.Getenv("DROP_PATH"))
 		if err != nil {
-			return fmt.Errorf("failed to read up.sql file: %v\n", err)
+			return fmt.Errorf("failed to read drop.sql file: %v\n", err)
 		}
 		if _, err = conn.Exec(ctx, string(query)); err != nil {
-			return fmt.Errorf("failed to init tables: %v\n", err)
+			return fmt.Errorf("failed to drop tables: %v\n", err)
 		}
 		return nil
 	})

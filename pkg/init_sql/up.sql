@@ -1,12 +1,14 @@
 CREATE TABLE IF NOT EXISTS users
 (
-    "id" BIGSERIAL PRIMARY KEY
+    "id"  BIGSERIAL PRIMARY KEY,
+    "user_id" BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS segments
+
 (
     "id"   BIGSERIAL PRIMARY KEY,
-    "name" varchar(255) NOT NULL
+    "slug" varchar(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_segments
