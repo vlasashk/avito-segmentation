@@ -32,24 +32,36 @@ func Run(log *slog.Logger, server *ServerAPI) {
 
 	router.Use(middleware.Timeout(60 * time.Second))
 
-	initRouterMethods()
+	//initRouterMethods()
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello GolinuxCloud members!"))
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("Hello World!"))
 	})
+	router.Mount("/user", server.userRouter())
+	router.Mount("/segment", server.segmentRouter())
 
-	router.Post("/user", server.HandleAddUser)
-	router.Post("/segment", server.HandleAddSegment)
-
-	if err := http.ListenAndServe(server.ListenAddr, router); err != nil {
+	if err := http.ListenAndServe(":"+server.ListenAddr, router); err != nil {
 		log.Error("failed to start server")
 	}
 	log.Error("server died")
 }
 
-func initRouterMethods() {
-	chi.RegisterMethod("GET")
-	chi.RegisterMethod("POST")
-	chi.RegisterMethod("PUT")
-	chi.RegisterMethod("DELETE")
+func (s *ServerAPI) userRouter() http.Handler {
+	router := chi.NewRouter()
+	router.Post("/new", s.HandleAddUser)
+	router.Post("/addSegment", s.HandleAddUserToSegment)
+	return router
 }
+
+func (s *ServerAPI) segmentRouter() http.Handler {
+	router := chi.NewRouter()
+	router.Post("/new", s.HandleAddSegment)
+	return router
+}
+
+//func initRouterMethods() {
+//	chi.RegisterMethod("GET")
+//	chi.RegisterMethod("POST")
+//	chi.RegisterMethod("PUT")
+//}

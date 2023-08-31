@@ -18,10 +18,10 @@ type Segment struct {
 }
 
 type UserSegment struct {
-	UserID    uint64    `json:"user_id"`
-	SegmentID uint64    `json:"segment_id"`
-	CreatedAt time.Time `json:"created_at"`
-	DeletedAt time.Time `json:"deleted_at,omitempty"`
+	UserID      uint64    `json:"user_id" validate:"required"`
+	SegmentSlug string    `json:"segment_slug" validate:"required"`
+	CreatedAt   time.Time `json:"created_at"`
+	DeletedAt   time.Time `json:"deleted_at,omitempty"`
 }
 
 func (pg *PostgresDB) CascadeDeleteSegment() {
@@ -30,15 +30,40 @@ func (pg *PostgresDB) CascadeDeleteSegment() {
 func (pg *PostgresDB) DeleteUserFromSegment() {
 
 }
-func (pg *PostgresDB) AddUserToSegment() {
 
-}
 func (pg *PostgresDB) GetUserSegmentsInfo() {
 
 }
 func (pg *PostgresDB) GetSegmentUsersInfo() {
 
 }
+
+func (pg *PostgresDB) AddUserToSegment(ctx context.Context, userSegment UserSegment) error {
+	var userID, segmentID uint64
+	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
+		if err := pg.Ping(ctx); err != nil {
+			return fmt.Errorf("failed to ping db: %v\n", err)
+		}
+		queryCheckUser := `select id from users where user_id = $1`
+		queryCheckSegment := `select id from segments where slug = $1`
+		queryInsert := `insert into user_segments (user_id, segment_id) values ($1, $2)`
+		if err := conn.QueryRow(ctx, queryCheckUser, userSegment.UserID).Scan(&userID); err != nil {
+			return fmt.Errorf("user %v doesn't exist: %v\n", userSegment.UserID, err)
+		}
+		if err := conn.QueryRow(ctx, queryCheckSegment, userSegment.SegmentSlug).Scan(&segmentID); err != nil {
+			return fmt.Errorf("segment %v doesn't exist: %v\n", userSegment.SegmentSlug, err)
+		}
+		if _, err := conn.Exec(ctx, queryInsert, userID, segmentID); err != nil {
+			return fmt.Errorf("failed to insert data: %v\n", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (pg *PostgresDB) AddUser(ctx context.Context, user User) (uint64, error) {
 	var id uint64
 	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
