@@ -30,12 +30,43 @@ func (pg *PostgresDB) CascadeDeleteSegment() {
 func (pg *PostgresDB) DeleteUserFromSegment() {
 
 }
-
-func (pg *PostgresDB) GetUserSegmentsInfo() {
-
-}
 func (pg *PostgresDB) GetSegmentUsersInfo() {
 
+}
+
+func (pg *PostgresDB) GetUserSegmentsInfo(ctx context.Context, user User) ([]string, error) {
+	var id uint64
+	var res []string
+	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
+		if err := pg.Ping(ctx); err != nil {
+			return fmt.Errorf("failed to ping db: %v\n", err)
+		}
+		queryCheckUser := `select id from users where user_id = $1`
+		query := `select slug from user_segments us join segments s on s.id = us.segment_id where user_id = $1`
+		if err := conn.QueryRow(ctx, queryCheckUser, user.UID).Scan(&id); err != nil {
+			return fmt.Errorf("user %v doesn't exist: %v\n", user.UID, err)
+		}
+		if rows, err := conn.Query(ctx, query, id); err != nil {
+			return fmt.Errorf("failed to get data: %v\n", err)
+		} else {
+			defer rows.Close()
+			for rows.Next() {
+				var segment string
+				if err = rows.Scan(&segment); err != nil {
+					return fmt.Errorf("failed to scan segment: %v\n", err)
+				}
+				res = append(res, segment)
+			}
+			if err = rows.Err(); err != nil {
+				return fmt.Errorf("error occurred while reading: %v\n", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return res, err
+	}
+	return res, nil
 }
 
 func (pg *PostgresDB) AddUserToSegment(ctx context.Context, userSegment UserSegment) error {

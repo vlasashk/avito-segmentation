@@ -6,47 +6,9 @@ import (
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 	"github.com/vlasashk/avito-segmentation/internal/model/logger"
-	"github.com/vlasashk/avito-segmentation/internal/model/storage"
 	"log/slog"
 	"net/http"
 )
-
-type StorageHandler interface {
-	CascadeDeleteSegment()
-	DeleteUserFromSegment()
-	AddUserToSegment()
-	GetUserSegmentsInfo()
-	GetSegmentUsersInfo()
-	AddUser(uid uint64)
-	AddSegment(slug string)
-}
-
-type UserRequest struct {
-	storage.User
-}
-
-type SegmentRequest struct {
-	storage.Segment
-}
-
-type UserSegmentRequest struct {
-	storage.UserSegment
-}
-
-type UserResponse struct {
-	ResponseStatus
-	storage.User
-}
-
-type SegmentResponse struct {
-	ResponseStatus
-	storage.Segment
-}
-
-type UserSegmentResponse struct {
-	ResponseStatus
-	storage.UserSegment
-}
 
 func (s *ServerAPI) HandleAddUser(w http.ResponseWriter, r *http.Request) {
 	newUser := &UserRequest{}
@@ -143,11 +105,39 @@ func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Reques
 	return
 }
 
-func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Request) {
+func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Request) {
+	user := &UserRequest{}
+	log := s.Log.With(
+		slog.String("request_id", middleware.GetReqID(r.Context())),
+	)
+	if err := render.DecodeJSON(r.Body, &user); err != nil {
+		log.Error("failed to decode request body", logger.Err(err))
+		render.JSON(w, r, Error("failed to decode request body"))
+		return
+	}
+	log.Info("request body decoded", slog.Any("request", *user))
+	if err := validator.New().Struct(user); err != nil {
+		log.Error("wrong body structure", logger.Err(err))
+		render.JSON(w, r, Error("wrong body structure"))
+		return
+	}
+	segments, err := s.Store.GetUserSegmentsInfo(context.Background(), user.User)
+	if err != nil {
+		log.Error("failed to execute query", logger.Err(err))
+		render.JSON(w, r, Error("failed to execute query"))
+		return
+	}
+	response := GetSegmentsResponse{
+		ResponseStatus: OK(),
+		UserID:         user.UID,
+		SegmentSlug:    segments,
+	}
+	log.Info("query successfully executed", slog.Any("request", response))
+	render.JSON(w, r, response)
 	return
 }
 
-func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Request) {
+func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Request) {
 	return
 }
 

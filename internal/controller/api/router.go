@@ -3,19 +3,12 @@ package api
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/vlasashk/avito-segmentation/internal/model/storage"
 	"log/slog"
 	"net/http"
 	"time"
 )
 
-type ServerAPI struct {
-	ListenAddr string
-	Store      *storage.PostgresDB
-	Log        *slog.Logger
-}
-
-func NewAPIServer(listenAddr string, store *storage.PostgresDB, log *slog.Logger) *ServerAPI {
+func NewAPIServer(listenAddr string, store Storage, log *slog.Logger) *ServerAPI {
 	return &ServerAPI{
 		ListenAddr: listenAddr,
 		Store:      store,
@@ -51,6 +44,7 @@ func (s *ServerAPI) userRouter() http.Handler {
 	router := chi.NewRouter()
 	router.Post("/new", s.HandleAddUser)
 	router.Post("/addSegment", s.HandleAddUserToSegment)
+	router.Get("/segments", s.HandleGetUserSegmentsInfo)
 	return router
 }
 
