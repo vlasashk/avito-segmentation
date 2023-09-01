@@ -45,6 +45,7 @@ func (s *ServerAPI) userRouter() http.Handler {
 	router.Post("/new", s.HandleAddUser)
 	router.Post("/addSegment", s.HandleAddUserToSegment)
 	router.Get("/segments", s.HandleGetUserSegmentsInfo)
+	router.Delete("/segments", s.HandleDeleteUserFromSegment)
 	return router
 }
 

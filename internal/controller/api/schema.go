@@ -8,10 +8,10 @@ import (
 
 type Storage interface {
 	CascadeDeleteSegment()
-	DeleteUserFromSegment()
+	DeleteUserFromSegments(ctx context.Context, userSegment storage.UserSegments) error
 	GetUserSegmentsInfo(context.Context, storage.User) ([]string, error)
 	GetSegmentUsersInfo()
-	AddUserToSegment(context.Context, storage.UserSegment) error
+	AddUserToSegments(context.Context, storage.UserSegments) error
 	AddUser(context.Context, storage.User) (uint64, error)
 	AddSegment(context.Context, storage.Segment) (uint64, error)
 }
@@ -31,7 +31,7 @@ type SegmentRequest struct {
 }
 
 type UserSegmentRequest struct {
-	storage.UserSegment
+	storage.UserSegments
 }
 
 type UserResponse struct {
@@ -46,7 +46,7 @@ type SegmentResponse struct {
 
 type UserSegmentResponse struct {
 	ResponseStatus
-	storage.UserSegment
+	storage.UserSegments
 }
 
 type GetSegmentsResponse struct {

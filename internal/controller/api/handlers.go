@@ -90,7 +90,12 @@ func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Reques
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
-	err := s.Store.AddUserToSegment(context.Background(), newUserSegment.UserSegment)
+	if len(newUserSegment.UserSegments.SegmentSlug) == 0 {
+		log.Error("empty segment array")
+		render.JSON(w, r, Error("empty segment array"))
+		return
+	}
+	err := s.Store.AddUserToSegments(context.Background(), newUserSegment.UserSegments)
 	if err != nil {
 		log.Error("failed to execute query", logger.Err(err))
 		render.JSON(w, r, Error("failed to execute query"))
@@ -98,7 +103,7 @@ func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Reques
 	}
 	response := UserSegmentResponse{
 		ResponseStatus: OK(),
-		UserSegment:    newUserSegment.UserSegment,
+		UserSegments:   newUserSegment.UserSegments,
 	}
 	log.Info("query successfully executed", slog.Any("request", response))
 	render.JSON(w, r, response)
@@ -137,11 +142,43 @@ func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Req
 	return
 }
 
-func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Request) {
+func (s *ServerAPI) HandleDeleteUserFromSegment(w http.ResponseWriter, r *http.Request) {
+	newUserSegment := &UserSegmentRequest{}
+	log := s.Log.With(
+		slog.String("request_id", middleware.GetReqID(r.Context())),
+	)
+	if err := render.DecodeJSON(r.Body, &newUserSegment); err != nil {
+		log.Error("failed to decode request body", logger.Err(err))
+		render.JSON(w, r, Error("failed to decode request body"))
+		return
+	}
+	log.Info("request body decoded", slog.Any("request", *newUserSegment))
+	if err := validator.New().Struct(newUserSegment); err != nil {
+		log.Error("wrong body structure", logger.Err(err))
+		render.JSON(w, r, Error("wrong body structure"))
+		return
+	}
+	if len(newUserSegment.UserSegments.SegmentSlug) == 0 {
+		log.Error("empty segment array")
+		render.JSON(w, r, Error("empty segment array"))
+		return
+	}
+	err := s.Store.DeleteUserFromSegments(context.Background(), newUserSegment.UserSegments)
+	if err != nil {
+		log.Error("failed to execute query", logger.Err(err))
+		render.JSON(w, r, Error("failed to execute query"))
+		return
+	}
+	response := UserSegmentResponse{
+		ResponseStatus: OK(),
+		UserSegments:   newUserSegment.UserSegments,
+	}
+	log.Info("query successfully executed", slog.Any("request", response))
+	render.JSON(w, r, response)
 	return
 }
 
-func (s *ServerAPI) HandleDeleteUserFromSegment(w http.ResponseWriter, r *http.Request) {
+func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
