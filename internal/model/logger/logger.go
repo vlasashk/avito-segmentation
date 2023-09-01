@@ -10,7 +10,9 @@ const (
 	envDev   = "dev"
 )
 
-func InitLogger(env string) *slog.Logger {
+func InitLogger() *slog.Logger {
+	var env string
+	env = os.Getenv("ENV_RUN")
 	var log *slog.Logger
 	switch env {
 	case envLocal:

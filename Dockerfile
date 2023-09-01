@@ -9,7 +9,6 @@ FROM alpine
 WORKDIR /router
 COPY --from=builder /router/app .
 COPY /pkg/init_sql/*.sql .
-COPY /config/config.yaml .
 
 EXPOSE 8090
 ENTRYPOINT ["/router/app"]
