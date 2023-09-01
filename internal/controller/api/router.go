@@ -49,5 +49,6 @@ func (s *ServerAPI) userRouter() http.Handler {
 func (s *ServerAPI) segmentRouter() http.Handler {
 	router := chi.NewRouter()
 	router.Post("/new", s.HandleAddSegment)
+	router.Delete("/remove", s.HandleCascadeDeleteSegment)
 	return router
 }

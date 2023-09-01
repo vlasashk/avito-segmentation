@@ -7,7 +7,7 @@ import (
 )
 
 type Storage interface {
-	CascadeDeleteSegment()
+	CascadeDeleteSegment(context.Context, storage.Segment) error
 	DeleteUserFromSegments(ctx context.Context, userSegment storage.UserSegments) error
 	GetUserSegmentsInfo(context.Context, storage.User) ([]string, error)
 	GetSegmentUsersInfo()

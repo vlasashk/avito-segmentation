@@ -31,9 +31,6 @@ type UserSegment struct {
 	DeletedAt   time.Time `json:"deleted_at,omitempty"`
 }
 
-func (pg *PostgresDB) CascadeDeleteSegment() {
-
-}
 func (pg *PostgresDB) GetSegmentUsersInfo() {
 
 }
@@ -200,4 +197,26 @@ func (pg *PostgresDB) AddSegment(ctx context.Context, segment Segment) (uint64, 
 		return id, err
 	}
 	return id, nil
+}
+
+func (pg *PostgresDB) CascadeDeleteSegment(ctx context.Context, segment Segment) error {
+	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
+		if err := pg.Ping(ctx); err != nil {
+			return fmt.Errorf("failed to ping db: %v\n", err)
+		}
+		query := `delete from segments where slug = $1`
+		if res, err := conn.Exec(ctx, query, segment.Slug); err != nil {
+			return fmt.Errorf("failed to delete segment: %v\n", err)
+		} else {
+			n := res.RowsAffected()
+			if n < 1 {
+				return fmt.Errorf("segment %v is not present in database\n", segment.Slug)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
