@@ -12,12 +12,13 @@ type PostgresDB struct {
 }
 
 func New(ctx context.Context) (*PostgresDB, error) {
-	var username, password, dbport, dbname string
+	var username, password, dbport, dbhost, dbname string
 	username = os.Getenv("POSTGRES_USER")
 	password = os.Getenv("POSTGRES_PASSWORD")
 	dbport = os.Getenv("DB_PORT")
+	dbhost = os.Getenv("DB_HOST")
 	dbname = os.Getenv("POSTGRES_DB")
-	url := fmt.Sprintf("postgresql://%s:%s@database:%s/%s", username, password, dbport, dbname)
+	url := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", username, password, dbhost, dbport, dbname)
 	dbPool, err := pgxpool.New(ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connection pool: %v\n", err)

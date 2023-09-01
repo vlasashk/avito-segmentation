@@ -22,10 +22,7 @@ func Run(log *slog.Logger, server *ServerAPI) {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
-
 	router.Use(middleware.Timeout(60 * time.Second))
-
-	//initRouterMethods()
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
@@ -54,9 +51,3 @@ func (s *ServerAPI) segmentRouter() http.Handler {
 	router.Post("/new", s.HandleAddSegment)
 	return router
 }
-
-//func initRouterMethods() {
-//	chi.RegisterMethod("GET")
-//	chi.RegisterMethod("POST")
-//	chi.RegisterMethod("PUT")
-//}
