@@ -33,8 +33,44 @@ type UserSegment struct {
 	DeletedAt   time.Time `json:"deleted_at,omitempty"`
 }
 
-func (pg *PostgresDB) GetSegmentUsersInfo() {
-
+func (pg *PostgresDB) GetSegmentUsersInfo(ctx context.Context, segment Segment, log *slog.Logger) ([]uint64, error) {
+	var id uint64
+	var res []uint64
+	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
+		if err := pg.Ping(ctx); err != nil {
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to ping db: %v\n", err)))
+			return fmt.Errorf("failed to ping db")
+		}
+		queryCheckUser := `select id from segments where slug = $1`
+		query := `select u.user_id from user_segments us join users u on u.id = us.user_id where segment_id = $1 and deleted_at is null`
+		if err := conn.QueryRow(ctx, queryCheckUser, segment.Slug).Scan(&id); err != nil {
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("segment '%v' doesn't exist: %v\n", segment.Slug, err)))
+			return fmt.Errorf("segment '%v' doesn't exist", segment.Slug)
+		}
+		if rows, err := conn.Query(ctx, query, id); err != nil {
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to get data: %v\n", err)))
+			return fmt.Errorf("failed to get data")
+		} else {
+			defer rows.Close()
+			for rows.Next() {
+				var user uint64
+				if err = rows.Scan(&user); err != nil {
+					log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to scan user: %v\n", err)))
+					return fmt.Errorf("failed to scan user")
+				}
+				res = append(res, user)
+			}
+			if err = rows.Err(); err != nil {
+				log.Error("failed to execute query", logger.Err(fmt.Errorf("error occurred while reading: %v\n", err)))
+				return fmt.Errorf("error occurred while reading")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return res, err
+	}
+	return res, nil
 }
 
 func (pg *PostgresDB) DeleteUserFromSegments(ctx context.Context, userSegment UserSegments, log *slog.Logger) error {
@@ -153,8 +189,8 @@ func (pg *PostgresDB) GetUserSegmentsInfo(ctx context.Context, user User, log *s
 		queryCheckUser := `select id from users where user_id = $1`
 		query := `select slug from user_segments us join segments s on s.id = us.segment_id where user_id = $1 and deleted_at is null `
 		if err := conn.QueryRow(ctx, queryCheckUser, user.UID).Scan(&id); err != nil {
-			log.Error("failed to execute query", logger.Err(fmt.Errorf("user %v doesn't exist: %v\n", user.UID, err)))
-			return fmt.Errorf("user %v doesn't exist", user.UID)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("user '%v' doesn't exist: %v\n", user.UID, err)))
+			return fmt.Errorf("user '%v' doesn't exist", user.UID)
 		}
 		if rows, err := conn.Query(ctx, query, id); err != nil {
 			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to get data: %v\n", err)))

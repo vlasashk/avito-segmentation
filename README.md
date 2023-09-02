@@ -61,5 +61,11 @@ This method will permanently delete segment and all it's relations between user-
     "slug": "test"
 }
 ```
+- {GET} **/segment/users** - Return the list of users the segment has. Request Body JSON:
+```
+{
+    "slug": test
+}
+```
 #### Storage
 - PostgreSQL

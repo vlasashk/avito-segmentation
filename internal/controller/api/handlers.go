@@ -230,5 +230,36 @@ func (s *ServerAPI) HandleCascadeDeleteSegment(w http.ResponseWriter, r *http.Re
 }
 
 func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Request) {
+	segment := &SegmentRequest{}
+	log := s.Log.With(
+		slog.String("request_id", middleware.GetReqID(r.Context())),
+	)
+	if err := render.DecodeJSON(r.Body, &segment); err != nil {
+		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, Error("failed to decode request body"))
+		return
+	}
+	log.Info("request body decoded", slog.Any("request", *segment))
+	if err := validator.New().Struct(segment); err != nil {
+		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, Error("wrong body structure"))
+		return
+	}
+	users, err := s.Store.GetSegmentUsersInfo(context.Background(), segment.Segment, log)
+	if err != nil {
+		render.Status(r, http.StatusConflict)
+		render.JSON(w, r, Error(err.Error()))
+		return
+	}
+	response := GetUsersResponse{
+		ResponseStatus: OK(),
+		SegmentSlug:    segment.Slug,
+		UserIDs:        users,
+	}
+	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, response)
 	return
 }

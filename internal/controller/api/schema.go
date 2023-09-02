@@ -10,7 +10,7 @@ type Storage interface {
 	CascadeDeleteSegment(context.Context, storage.Segment, *slog.Logger) error
 	DeleteUserFromSegments(context.Context, storage.UserSegments, *slog.Logger) error
 	GetUserSegmentsInfo(context.Context, storage.User, *slog.Logger) ([]string, error)
-	GetSegmentUsersInfo()
+	GetSegmentUsersInfo(context.Context, storage.Segment, *slog.Logger) ([]uint64, error)
 	AddUserToSegments(context.Context, storage.UserSegments, *slog.Logger) error
 	AddUser(context.Context, storage.User, *slog.Logger) (uint64, error)
 	AddSegment(context.Context, storage.Segment, *slog.Logger) (uint64, error)
