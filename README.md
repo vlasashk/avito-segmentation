@@ -1,5 +1,4 @@
 # avito-segmentation
-# WORK IN PROGRESS (MINIMUM DONE)
 
 ## Build
 #### Prerequisites
