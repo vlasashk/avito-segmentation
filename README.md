@@ -15,7 +15,7 @@ cd avito-segmentation
 docker compose up --build
 ```
 ## Project information
-Telegram bot to store and manage passwords for different services
+API for dynamic user segmentation for testing new functionality
 ### Functionality
 #### Users manipulation
 - {POST} **/user/new** - Add new user to database. Request Body JSON:

@@ -26,7 +26,7 @@ func Run(log *slog.Logger, server *ServerAPI) {
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
-		_, _ = w.Write([]byte("Hello World!"))
+		_, _ = w.Write([]byte("Welcome to API for dynamic user segmentation for testing new functionality"))
 	})
 	router.Mount("/user", server.userRouter())
 	router.Mount("/segment", server.segmentRouter())
@@ -34,7 +34,6 @@ func Run(log *slog.Logger, server *ServerAPI) {
 	if err := http.ListenAndServe(":"+server.ListenAddr, router); err != nil {
 		log.Error("failed to start server")
 	}
-	log.Error("server died")
 }
 
 func (s *ServerAPI) userRouter() http.Handler {
