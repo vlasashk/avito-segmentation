@@ -17,18 +17,21 @@ func (s *ServerAPI) HandleAddUser(w http.ResponseWriter, r *http.Request) {
 	)
 	if err := render.DecodeJSON(r.Body, &newUser); err != nil {
 		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("failed to decode request body"))
 		return
 	}
 	log.Info("request body decoded", slog.Any("request", *newUser))
 	if err := validator.New().Struct(newUser); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
 	id, err := s.Store.AddUser(context.Background(), newUser.User)
 	if err != nil {
 		log.Error("failed to execute query", logger.Err(err))
+		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, Error("failed to execute query"))
 		return
 	}
@@ -49,18 +52,21 @@ func (s *ServerAPI) HandleAddSegment(w http.ResponseWriter, r *http.Request) {
 	)
 	if err := render.DecodeJSON(r.Body, &newSegment); err != nil {
 		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("failed to decode request body"))
 		return
 	}
 	log.Info("request body decoded", slog.Any("request", *newSegment))
 	if err := validator.New().Struct(newSegment); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
 	id, err := s.Store.AddSegment(context.Background(), newSegment.Segment)
 	if err != nil {
 		log.Error("failed to execute query", logger.Err(err))
+		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, Error("failed to execute query"))
 		return
 	}
@@ -81,23 +87,27 @@ func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Reques
 	)
 	if err := render.DecodeJSON(r.Body, &newUserSegment); err != nil {
 		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("failed to decode request body"))
 		return
 	}
 	log.Info("request body decoded", slog.Any("request", *newUserSegment))
 	if err := validator.New().Struct(newUserSegment); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
 	if len(newUserSegment.UserSegments.SegmentSlug) == 0 {
 		log.Error("empty segment array")
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("empty segment array"))
 		return
 	}
 	err := s.Store.AddUserToSegments(context.Background(), newUserSegment.UserSegments)
 	if err != nil {
 		log.Error("failed to execute query", logger.Err(err))
+		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, Error("failed to execute query"))
 		return
 	}
@@ -117,18 +127,21 @@ func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Req
 	)
 	if err := render.DecodeJSON(r.Body, &user); err != nil {
 		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("failed to decode request body"))
 		return
 	}
 	log.Info("request body decoded", slog.Any("request", *user))
 	if err := validator.New().Struct(user); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
 	segments, err := s.Store.GetUserSegmentsInfo(context.Background(), user.User)
 	if err != nil {
 		log.Error("failed to execute query", logger.Err(err))
+		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, Error("failed to execute query"))
 		return
 	}
@@ -149,23 +162,27 @@ func (s *ServerAPI) HandleDeleteUserFromSegment(w http.ResponseWriter, r *http.R
 	)
 	if err := render.DecodeJSON(r.Body, &newUserSegment); err != nil {
 		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("failed to decode request body"))
 		return
 	}
 	log.Info("request body decoded", slog.Any("request", *newUserSegment))
 	if err := validator.New().Struct(newUserSegment); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
 	if len(newUserSegment.UserSegments.SegmentSlug) == 0 {
 		log.Error("empty segment array")
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("empty segment array"))
 		return
 	}
 	err := s.Store.DeleteUserFromSegments(context.Background(), newUserSegment.UserSegments)
 	if err != nil {
 		log.Error("failed to execute query", logger.Err(err))
+		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, Error("failed to execute query"))
 		return
 	}
@@ -185,18 +202,21 @@ func (s *ServerAPI) HandleCascadeDeleteSegment(w http.ResponseWriter, r *http.Re
 	)
 	if err := render.DecodeJSON(r.Body, &newSegment); err != nil {
 		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("failed to decode request body"))
 		return
 	}
 	log.Info("request body decoded", slog.Any("request", *newSegment))
 	if err := validator.New().Struct(newSegment); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
 	err := s.Store.CascadeDeleteSegment(context.Background(), newSegment.Segment)
 	if err != nil {
 		log.Error("failed to execute query", logger.Err(err))
+		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, Error("failed to execute query"))
 		return
 	}
