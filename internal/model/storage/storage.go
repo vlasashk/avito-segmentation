@@ -2,12 +2,14 @@ package storage
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vlasashk/avito-segmentation/internal/model/logger"
 	"log/slog"
+	"os"
 	"time"
 )
 
@@ -26,11 +28,71 @@ type UserSegments struct {
 	SegmentSlug []string `json:"segment_slug" validate:"required"`
 }
 
-type UserSegment struct {
-	UserID      uint64    `json:"user_id" validate:"required"`
-	SegmentSlug string    `json:"segment_slug" validate:"required"`
-	CreatedAt   time.Time `json:"created_at"`
-	DeletedAt   time.Time `json:"deleted_at,omitempty"`
+type CsvReport struct {
+	Year  uint       `json:"year" validate:"required"`
+	Month time.Month `json:"month" validate:"required"`
+}
+
+func (pg *PostgresDB) CsvHistoryReport(ctx context.Context, csvDates CsvReport, log *slog.Logger) error {
+	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
+		if err := pg.Ping(ctx); err != nil {
+			log.Error("failed to ping db:", logger.Err(err))
+			return fmt.Errorf("failed to ping db")
+		}
+		startDate := time.Date(int(csvDates.Year), csvDates.Month, 0, 0, 0, 0, 0, time.Local)
+		endDate := startDate.AddDate(0, 1, 0)
+		query := `SELECT u.user_id, s.slug AS segment, 'added' AS status, created_at AS segment_date
+					FROM user_segments us
+					JOIN segments s on s.id = us.segment_id
+					JOIN users u on u.id = us.user_id
+					WHERE (created_at BETWEEN $1 AND $2)
+					UNION
+					SELECT u.user_id, s.slug AS segment, 'removed' AS status, deleted_at AS segment_date
+					FROM user_segments us
+					JOIN segments s on s.id = us.segment_id
+					JOIN users u on u.id = us.user_id
+					WHERE (deleted_at BETWEEN $1 AND $2)
+					ORDER BY user_id, segment, status;`
+		var file *os.File
+		if fileTemp, err := os.Create(os.Getenv("CSV_PATH")); err != nil {
+			log.Error("failed to create file", logger.Err(err))
+			return fmt.Errorf("failed to begin transaction")
+		} else {
+			file = fileTemp
+		}
+		defer file.Close()
+
+		if rows, err := conn.Query(ctx, query, startDate, endDate); err != nil {
+			log.Error("failed to execute query", logger.Err(err))
+			return fmt.Errorf("failed to execute query")
+		} else {
+			defer rows.Close()
+			writer := csv.NewWriter(file)
+			writer.Comma = ';'
+			defer writer.Flush()
+			for rows.Next() {
+				var userId, segmentId, status string
+				var segmentDate time.Time
+				if err = rows.Scan(&userId, &segmentId, &status, &segmentDate); err != nil {
+					log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to scan user: %v\n", err)))
+					return fmt.Errorf("failed to scan user")
+				}
+				if err = writer.Write([]string{userId, segmentId, status, segmentDate.String()}); err != nil {
+					log.Error("failed to write into csv:", logger.Err(err))
+					return fmt.Errorf("failed to write into csv")
+				}
+			}
+			if err = rows.Err(); err != nil {
+				log.Error("error occurred while reading", logger.Err(err))
+				return fmt.Errorf("error occurred while reading")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (pg *PostgresDB) GetSegmentUsersInfo(ctx context.Context, segment Segment, log *slog.Logger) ([]uint64, error) {

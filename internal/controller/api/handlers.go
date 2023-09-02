@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 	"github.com/vlasashk/avito-segmentation/internal/model/logger"
 	"log/slog"
 	"net/http"
+	"os"
 )
 
 func (s *ServerAPI) HandleAddUser(w http.ResponseWriter, r *http.Request) {
@@ -257,6 +259,45 @@ func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Req
 		ResponseStatus: OK(),
 		SegmentSlug:    segment.Slug,
 		UserIDs:        users,
+	}
+	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, response)
+	return
+}
+
+func (s *ServerAPI) HandleCsvReport(w http.ResponseWriter, r *http.Request) {
+	dates := &CsvReportRequest{}
+	log := s.Log.With(
+		slog.String("request_id", middleware.GetReqID(r.Context())),
+	)
+	if err := render.DecodeJSON(r.Body, &dates); err != nil {
+		log.Error("failed to decode request body", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, Error("failed to decode request body"))
+		return
+	}
+	log.Info("request body decoded", slog.Any("request", *dates))
+	if err := validator.New().Struct(dates); err != nil {
+		log.Error("wrong body structure", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, Error("wrong body structure"))
+		return
+	}
+	if !(dates.Month > 0 && dates.Month < 13) {
+		log.Error("wrong body structure", logger.Err(fmt.Errorf("wrong month format")))
+		render.Status(r, http.StatusConflict)
+		render.JSON(w, r, Error("wrong month format"))
+		return
+	}
+	if err := s.Store.CsvHistoryReport(context.Background(), dates.CsvReport, log); err != nil {
+		render.Status(r, http.StatusConflict)
+		render.JSON(w, r, Error(err.Error()))
+		return
+	}
+	response := CsvReportResponse{
+		ResponseStatus: OK(),
+		CsvUrl:         os.Getenv("CSV_PATH"),
 	}
 	log.Info("query successfully executed", slog.Any("request", response))
 	render.Status(r, http.StatusOK)

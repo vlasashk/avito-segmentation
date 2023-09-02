@@ -30,6 +30,7 @@ func Run(log *slog.Logger, server *ServerAPI) {
 	})
 	router.Mount("/user", server.userRouter())
 	router.Mount("/segment", server.segmentRouter())
+	router.Get("/report", server.HandleCsvReport)
 
 	if err := http.ListenAndServe(":"+server.ListenAddr, router); err != nil {
 		log.Error("failed to start server")

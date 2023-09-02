@@ -14,6 +14,7 @@ type Storage interface {
 	AddUserToSegments(context.Context, storage.UserSegments, *slog.Logger) error
 	AddUser(context.Context, storage.User, *slog.Logger) (uint64, error)
 	AddSegment(context.Context, storage.Segment, *slog.Logger) (uint64, error)
+	CsvHistoryReport(context.Context, storage.CsvReport, *slog.Logger) error
 }
 
 type ServerAPI struct {
@@ -59,4 +60,13 @@ type GetUsersResponse struct {
 	ResponseStatus
 	SegmentSlug string   `json:"user_segment" validate:"required"`
 	UserIDs     []uint64 `json:"user_ids" validate:"required"`
+}
+
+type CsvReportRequest struct {
+	storage.CsvReport
+}
+
+type CsvReportResponse struct {
+	ResponseStatus
+	CsvUrl string `json:"csv_url" validate:"required"`
 }
