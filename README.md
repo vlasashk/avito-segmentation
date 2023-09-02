@@ -16,6 +16,16 @@ docker compose up --build
 ```
 ## Project information
 API for dynamic user segmentation for testing new functionality
+### Restrictions
+- UserID must be unique, otherwise it won't be allowed to add one
+- Segment name must be unique, otherwise it won't be allowed to add one
+- User can be added to segment only if user and segment both exist in database
+- All segments present in the list to be added to a user must exist in the database.
+Even if a single segment doesn't exist then the request will be aborted and none of the segments will be added to a user
+- If segment is already assigned to user then the request will be aborted and none of the segments from the list will be added to a user
+- Deleting segment from database will cascade delete it from every user and history for this segment won't be available
+- Deleting segment from a user doesn't delete record from database, instead of deletion it marks `deleted_at` field with current date
+
 ### Storage
 - PostgreSQL
 ### Functionality
@@ -32,7 +42,7 @@ otherwise it won't ve allowed.</br> Request Body JSON:
 ```
 {
     "user_id": 10,
-    "segment_slug": ["AVITO","AVITO_10", "AVITO_30"]
+    "segment_slug": ["AVITO", "AVITO_10", "AVITO_30"]
 }
 ```
 - {GET} **/user/segments** - Return the list of segments the user is a member of.</br> Request Body JSON:
@@ -45,7 +55,7 @@ otherwise it won't ve allowed.</br> Request Body JSON:
 ```
 {
     "user_id": 10,
-    "segment_slug": ["AVITO","AVITO_10", "AVITO_30"]
+    "segment_slug": ["AVITO", "AVITO_10", "AVITO_30"]
 }
 ```
 
