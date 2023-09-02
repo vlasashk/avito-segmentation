@@ -7,13 +7,13 @@ import (
 )
 
 type Storage interface {
-	CascadeDeleteSegment(context.Context, storage.Segment) error
-	DeleteUserFromSegments(ctx context.Context, userSegment storage.UserSegments) error
-	GetUserSegmentsInfo(context.Context, storage.User) ([]string, error)
+	CascadeDeleteSegment(context.Context, storage.Segment, *slog.Logger) error
+	DeleteUserFromSegments(context.Context, storage.UserSegments, *slog.Logger) error
+	GetUserSegmentsInfo(context.Context, storage.User, *slog.Logger) ([]string, error)
 	GetSegmentUsersInfo()
-	AddUserToSegments(context.Context, storage.UserSegments) error
-	AddUser(context.Context, storage.User) (uint64, error)
-	AddSegment(context.Context, storage.Segment) (uint64, error)
+	AddUserToSegments(context.Context, storage.UserSegments, *slog.Logger) error
+	AddUser(context.Context, storage.User, *slog.Logger) (uint64, error)
+	AddSegment(context.Context, storage.Segment, *slog.Logger) (uint64, error)
 }
 
 type ServerAPI struct {

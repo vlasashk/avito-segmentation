@@ -6,6 +6,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/vlasashk/avito-segmentation/internal/model/logger"
+	"log/slog"
 	"time"
 )
 
@@ -35,11 +37,12 @@ func (pg *PostgresDB) GetSegmentUsersInfo() {
 
 }
 
-func (pg *PostgresDB) DeleteUserFromSegments(ctx context.Context, userSegment UserSegments) error {
+func (pg *PostgresDB) DeleteUserFromSegments(ctx context.Context, userSegment UserSegments, log *slog.Logger) error {
 	var id uint64
 	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
 		if err := pg.Ping(ctx); err != nil {
-			return fmt.Errorf("failed to ping db: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to ping db: %v\n", err)))
+			return fmt.Errorf("failed to ping db")
 		}
 		queryCheckUser := `select id from users where user_id = $1`
 		query := `update user_segments us
@@ -48,22 +51,26 @@ func (pg *PostgresDB) DeleteUserFromSegments(ctx context.Context, userSegment Us
   					and us.user_id = $2
   					and deleted_at is null;`
 		if err := conn.QueryRow(ctx, queryCheckUser, userSegment.UserID).Scan(&id); err != nil {
-			return fmt.Errorf("user %v doesn't exist: %v\n", userSegment.UserID, err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("user '%v' doesn't exist: %v\n", userSegment.UserID, err)))
+			return fmt.Errorf("user '%v' doesn't exist", userSegment.UserID)
 		}
 		if tx, err := conn.Begin(ctx); err != nil {
-			return fmt.Errorf("failed to begin transaction: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to begin transaction: %v\n", err)))
+			return fmt.Errorf("failed to begin transaction")
 		} else {
 			defer func(tx pgx.Tx, ctx context.Context) {
 				_ = tx.Rollback(ctx)
 			}(tx, context.Background())
 			for i := 0; i < len(userSegment.SegmentSlug); i++ {
 				if _, err = conn.Exec(ctx, query, userSegment.SegmentSlug[i], id); err != nil {
-					return fmt.Errorf("failed to delete data: %v\n", err)
+					log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to delete data: %v\n", err)))
+					return fmt.Errorf("failed to delete data")
 				}
 			}
 			err = tx.Commit(context.Background())
 			if err != nil {
-				return fmt.Errorf("failed to commit transaction: %v\n", err)
+				log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to commit transaction: %v\n", err)))
+				return fmt.Errorf("failed to commit transaction")
 			}
 		}
 		return nil
@@ -74,12 +81,13 @@ func (pg *PostgresDB) DeleteUserFromSegments(ctx context.Context, userSegment Us
 	return nil
 }
 
-func (pg *PostgresDB) AddUserToSegments(ctx context.Context, userSegment UserSegments) error {
+func (pg *PostgresDB) AddUserToSegments(ctx context.Context, userSegment UserSegments, log *slog.Logger) error {
 	var userID, segmentID uint64
 	segmentSlice := make([]uint64, 0, len(userSegment.SegmentSlug))
 	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
 		if err := pg.Ping(ctx); err != nil {
-			return fmt.Errorf("failed to ping db: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to ping db: %v\n", err)))
+			return fmt.Errorf("failed to ping db")
 		}
 		queryCheckUser := `select id from users where user_id = $1`
 		queryCheckSegment := `select id from segments where slug = $1`
@@ -90,16 +98,19 @@ func (pg *PostgresDB) AddUserToSegments(ctx context.Context, userSegment UserSeg
 						  and user_segments.user_id = $1
 						  and user_segments.deleted_at is not null;`
 		if err := conn.QueryRow(ctx, queryCheckUser, userSegment.UserID).Scan(&userID); err != nil {
-			return fmt.Errorf("user %v doesn't exist: %v\n", userSegment.UserID, err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("user '%v' doesn't exist: %v\n", userSegment.UserID, err)))
+			return fmt.Errorf("user '%v' doesn't exist", userSegment.UserID)
 		}
 		for i := 0; i < len(userSegment.SegmentSlug); i++ {
 			if err := conn.QueryRow(ctx, queryCheckSegment, userSegment.SegmentSlug[i]).Scan(&segmentID); err != nil {
-				return fmt.Errorf("segment %v doesn't exist: %v\n", userSegment.SegmentSlug, err)
+				log.Error("failed to execute query", logger.Err(fmt.Errorf("segment %v doesn't exist: %v\n", userSegment.SegmentSlug, err)))
+				return fmt.Errorf("segment '%v' doesn't exist", userSegment.SegmentSlug)
 			}
 			segmentSlice = append(segmentSlice, segmentID)
 		}
 		if tx, err := conn.Begin(ctx); err != nil {
-			return fmt.Errorf("failed to begin transaction: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to begin transaction: %v\n", err)))
+			return fmt.Errorf("failed to begin transaction")
 		} else {
 			defer func(tx pgx.Tx, ctx context.Context) {
 				_ = tx.Rollback(ctx)
@@ -107,17 +118,20 @@ func (pg *PostgresDB) AddUserToSegments(ctx context.Context, userSegment UserSeg
 			for i := 0; i < len(segmentSlice); i++ {
 				var res pgconn.CommandTag
 				if res, err = conn.Exec(ctx, queryInsert, userID, segmentSlice[i], userSegment.SegmentSlug[i]); err != nil {
-					return fmt.Errorf("failed to insert data: %v\n", err)
+					log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to insert data: %v\n", err)))
+					return fmt.Errorf("failed to insert data or data already exists")
 				} else {
 					n := res.RowsAffected()
 					if n < 1 {
-						return fmt.Errorf("failed to update data or data is present\n")
+						log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to update data or data is already present in DB")))
+						return fmt.Errorf("failed to update data or data already exists")
 					}
 				}
 			}
 			err = tx.Commit(context.Background())
 			if err != nil {
-				return fmt.Errorf("failed to commit transaction: %v\n", err)
+				log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to commit transaction: %v\n", err)))
+				return fmt.Errorf("failed to commit transaction")
 			}
 		}
 		return nil
@@ -128,31 +142,36 @@ func (pg *PostgresDB) AddUserToSegments(ctx context.Context, userSegment UserSeg
 	return nil
 }
 
-func (pg *PostgresDB) GetUserSegmentsInfo(ctx context.Context, user User) ([]string, error) {
+func (pg *PostgresDB) GetUserSegmentsInfo(ctx context.Context, user User, log *slog.Logger) ([]string, error) {
 	var id uint64
 	var res []string
 	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
 		if err := pg.Ping(ctx); err != nil {
-			return fmt.Errorf("failed to ping db: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to ping db: %v\n", err)))
+			return fmt.Errorf("failed to ping db")
 		}
 		queryCheckUser := `select id from users where user_id = $1`
 		query := `select slug from user_segments us join segments s on s.id = us.segment_id where user_id = $1 and deleted_at is null `
 		if err := conn.QueryRow(ctx, queryCheckUser, user.UID).Scan(&id); err != nil {
-			return fmt.Errorf("user %v doesn't exist: %v\n", user.UID, err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("user %v doesn't exist: %v\n", user.UID, err)))
+			return fmt.Errorf("user %v doesn't exist", user.UID)
 		}
 		if rows, err := conn.Query(ctx, query, id); err != nil {
-			return fmt.Errorf("failed to get data: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to get data: %v\n", err)))
+			return fmt.Errorf("failed to get data")
 		} else {
 			defer rows.Close()
 			for rows.Next() {
 				var segment string
 				if err = rows.Scan(&segment); err != nil {
-					return fmt.Errorf("failed to scan segment: %v\n", err)
+					log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to scan segment: %v\n", err)))
+					return fmt.Errorf("failed to scan segment")
 				}
 				res = append(res, segment)
 			}
 			if err = rows.Err(); err != nil {
-				return fmt.Errorf("error occurred while reading: %v\n", err)
+				log.Error("failed to execute query", logger.Err(fmt.Errorf("error occurred while reading: %v\n", err)))
+				return fmt.Errorf("error occurred while reading")
 			}
 		}
 		return nil
@@ -163,15 +182,17 @@ func (pg *PostgresDB) GetUserSegmentsInfo(ctx context.Context, user User) ([]str
 	return res, nil
 }
 
-func (pg *PostgresDB) AddUser(ctx context.Context, user User) (uint64, error) {
+func (pg *PostgresDB) AddUser(ctx context.Context, user User, log *slog.Logger) (uint64, error) {
 	var id uint64
 	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
 		if err := pg.Ping(ctx); err != nil {
-			return fmt.Errorf("failed to ping db: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to ping db: %v\n", err)))
+			return fmt.Errorf("failed to ping db")
 		}
 		query := `insert into users (user_id) values ($1) returning "id"`
 		if err := conn.QueryRow(ctx, query, user.UID).Scan(&id); err != nil {
-			return fmt.Errorf("failed to insert data: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to insert data: %v\n", err)))
+			return fmt.Errorf("failed to insert data or user already exists")
 		}
 		return nil
 	})
@@ -181,15 +202,17 @@ func (pg *PostgresDB) AddUser(ctx context.Context, user User) (uint64, error) {
 	return id, nil
 }
 
-func (pg *PostgresDB) AddSegment(ctx context.Context, segment Segment) (uint64, error) {
+func (pg *PostgresDB) AddSegment(ctx context.Context, segment Segment, log *slog.Logger) (uint64, error) {
 	var id uint64
 	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
 		if err := pg.Ping(ctx); err != nil {
-			return fmt.Errorf("failed to ping db: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to ping db: %v\n", err)))
+			return fmt.Errorf("failed to ping db")
 		}
 		query := `insert into segments (slug) values ($1) returning "id"`
 		if err := conn.QueryRow(ctx, query, segment.Slug).Scan(&id); err != nil {
-			return fmt.Errorf("failed to insert data: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to insert data: %v\n", err)))
+			return fmt.Errorf("failed to insert data or segment already exists")
 		}
 		return nil
 	})
@@ -199,17 +222,20 @@ func (pg *PostgresDB) AddSegment(ctx context.Context, segment Segment) (uint64, 
 	return id, nil
 }
 
-func (pg *PostgresDB) CascadeDeleteSegment(ctx context.Context, segment Segment) error {
+func (pg *PostgresDB) CascadeDeleteSegment(ctx context.Context, segment Segment, log *slog.Logger) error {
 	err := pg.DB.AcquireFunc(context.Background(), func(conn *pgxpool.Conn) error {
 		if err := pg.Ping(ctx); err != nil {
-			return fmt.Errorf("failed to ping db: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to ping db: %v\n", err)))
+			return fmt.Errorf("failed to ping db")
 		}
 		query := `delete from segments where slug = $1`
 		if res, err := conn.Exec(ctx, query, segment.Slug); err != nil {
-			return fmt.Errorf("failed to delete segment: %v\n", err)
+			log.Error("failed to execute query", logger.Err(fmt.Errorf("failed to delete segment: %v\n", err)))
+			return fmt.Errorf("failed to delete segment")
 		} else {
 			n := res.RowsAffected()
 			if n < 1 {
+				log.Error("failed to execute query", logger.Err(fmt.Errorf("segment %v is not present in database\n", segment.Slug)))
 				return fmt.Errorf("segment %v is not present in database\n", segment.Slug)
 			}
 		}

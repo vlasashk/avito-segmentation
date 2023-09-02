@@ -28,11 +28,10 @@ func (s *ServerAPI) HandleAddUser(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
-	id, err := s.Store.AddUser(context.Background(), newUser.User)
+	id, err := s.Store.AddUser(context.Background(), newUser.User, log)
 	if err != nil {
-		log.Error("failed to execute query", logger.Err(err))
 		render.Status(r, http.StatusConflict)
-		render.JSON(w, r, Error("failed to execute query"))
+		render.JSON(w, r, Error(err.Error()))
 		return
 	}
 	response := UserResponse{
@@ -41,6 +40,7 @@ func (s *ServerAPI) HandleAddUser(w http.ResponseWriter, r *http.Request) {
 	}
 	response.User.Id = id
 	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 	return
 }
@@ -63,11 +63,10 @@ func (s *ServerAPI) HandleAddSegment(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
-	id, err := s.Store.AddSegment(context.Background(), newSegment.Segment)
+	id, err := s.Store.AddSegment(context.Background(), newSegment.Segment, log)
 	if err != nil {
-		log.Error("failed to execute query", logger.Err(err))
 		render.Status(r, http.StatusConflict)
-		render.JSON(w, r, Error("failed to execute query"))
+		render.JSON(w, r, Error(err.Error()))
 		return
 	}
 	response := SegmentResponse{
@@ -76,6 +75,7 @@ func (s *ServerAPI) HandleAddSegment(w http.ResponseWriter, r *http.Request) {
 	}
 	response.Segment.Id = id
 	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 	return
 }
@@ -104,11 +104,10 @@ func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Reques
 		render.JSON(w, r, Error("empty segment array"))
 		return
 	}
-	err := s.Store.AddUserToSegments(context.Background(), newUserSegment.UserSegments)
+	err := s.Store.AddUserToSegments(context.Background(), newUserSegment.UserSegments, log)
 	if err != nil {
-		log.Error("failed to execute query", logger.Err(err))
 		render.Status(r, http.StatusConflict)
-		render.JSON(w, r, Error("failed to execute query"))
+		render.JSON(w, r, Error(err.Error()))
 		return
 	}
 	response := UserSegmentResponse{
@@ -116,6 +115,7 @@ func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Reques
 		UserSegments:   newUserSegment.UserSegments,
 	}
 	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 	return
 }
@@ -138,11 +138,10 @@ func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Req
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
-	segments, err := s.Store.GetUserSegmentsInfo(context.Background(), user.User)
+	segments, err := s.Store.GetUserSegmentsInfo(context.Background(), user.User, log)
 	if err != nil {
-		log.Error("failed to execute query", logger.Err(err))
 		render.Status(r, http.StatusConflict)
-		render.JSON(w, r, Error("failed to execute query"))
+		render.JSON(w, r, Error(err.Error()))
 		return
 	}
 	response := GetSegmentsResponse{
@@ -151,6 +150,7 @@ func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Req
 		SegmentSlug:    segments,
 	}
 	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 	return
 }
@@ -179,11 +179,10 @@ func (s *ServerAPI) HandleDeleteUserFromSegment(w http.ResponseWriter, r *http.R
 		render.JSON(w, r, Error("empty segment array"))
 		return
 	}
-	err := s.Store.DeleteUserFromSegments(context.Background(), newUserSegment.UserSegments)
+	err := s.Store.DeleteUserFromSegments(context.Background(), newUserSegment.UserSegments, log)
 	if err != nil {
-		log.Error("failed to execute query", logger.Err(err))
 		render.Status(r, http.StatusConflict)
-		render.JSON(w, r, Error("failed to execute query"))
+		render.JSON(w, r, Error(err.Error()))
 		return
 	}
 	response := UserSegmentResponse{
@@ -191,6 +190,7 @@ func (s *ServerAPI) HandleDeleteUserFromSegment(w http.ResponseWriter, r *http.R
 		UserSegments:   newUserSegment.UserSegments,
 	}
 	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 	return
 }
@@ -213,11 +213,10 @@ func (s *ServerAPI) HandleCascadeDeleteSegment(w http.ResponseWriter, r *http.Re
 		render.JSON(w, r, Error("wrong body structure"))
 		return
 	}
-	err := s.Store.CascadeDeleteSegment(context.Background(), newSegment.Segment)
+	err := s.Store.CascadeDeleteSegment(context.Background(), newSegment.Segment, log)
 	if err != nil {
-		log.Error("failed to execute query", logger.Err(err))
 		render.Status(r, http.StatusConflict)
-		render.JSON(w, r, Error("failed to execute query"))
+		render.JSON(w, r, Error(err.Error()))
 		return
 	}
 	response := SegmentResponse{
@@ -225,6 +224,7 @@ func (s *ServerAPI) HandleCascadeDeleteSegment(w http.ResponseWriter, r *http.Re
 		Segment:        newSegment.Segment,
 	}
 	log.Info("query successfully executed", slog.Any("request", response))
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 	return
 }
