@@ -26,8 +26,12 @@ Even if a single segment doesn't exist then the request will be aborted and none
 - Deleting segment from database will cascade delete it from every user and history for this segment won't be available
 - Deleting segment from a user doesn't delete record from database, instead of deletion it marks `deleted_at` field with current date
 
-### Storage
-- PostgreSQL
+### Tools used
+- PostgreSQL as database
+- [jackc/pgx](https://pkg.go.dev/github.com/jackc/pgx) package as toolkit for PostgreSQL
+- [go-chi/chi](https://pkg.go.dev/github.com/go-chi/chi) package as router for building HTTP service 
+- Docker for deployment
+
 ### Functionality
 #### Users manipulation
 - {POST} **/user/new** - Add new user to database.</br> Request Body JSON:
