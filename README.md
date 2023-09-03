@@ -28,7 +28,8 @@ Even if a single segment doesn't exist then the request will be aborted and none
 ### Tools used
 - PostgreSQL as database
 - [jackc/pgx](https://pkg.go.dev/github.com/jackc/pgx) package as toolkit for PostgreSQL
-- [go-chi/chi](https://pkg.go.dev/github.com/go-chi/chi) package as router for building HTTP service 
+- [go-chi/chi](https://pkg.go.dev/github.com/go-chi/chi) package as router for building HTTP service
+- [swaggo/swag](https://github.com/swaggo/swag) package as swagger doc generator
 - Docker for deployment
 
 ### Functionality
@@ -48,12 +49,7 @@ otherwise it won't ve allowed.</br> Request Body JSON:
     "segment_slug": ["AVITO", "AVITO_10", "AVITO_30"]
 }
 ```
-- {GET} **/user/segments** - Return the list of segments the user is a member of.</br> Request Body JSON:
-```
-{
-    "user_id": 10
-}
-```
+- {GET} **/user/segments/{userID}** - Return the list of segments the user is a member of.</br> Request Body is not required.
 - {DELETE} **/user/segments** - Remove user from chosen segments by marking deleted_at field.</br> Request Body JSON:
 ```
 {
@@ -76,18 +72,13 @@ This method will permanently delete segment and all it's relations between user-
     "slug": "test"
 }
 ```
-- {GET} **/segment/users** - Return the list of users the segment has.</br> Request Body JSON:
-```
-{
-    "slug": test
-}
-```
+- {GET} **/segment/users/{segmentName}** - Return the list of users the segment has.</br> Request Body is not required.
 #### CSV Report
-- {GET} **/report** - Return the link to csv file with report for chosen month.</br> Request Body JSON:
+- {POST} **/report** - Return the link to csv file with report for chosen month.</br> Request Body JSON:
 ```
 {
     "year": 2023,
     "month": 9
 }
 ```
-- {GET} **/report/{fileName}** - Download the csv file with report for chosen month.</br> Request Body in not required.
+- {GET} **/report/{fileName}** - Download the csv file with report for chosen month.</br> Request Body is not required.

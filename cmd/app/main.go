@@ -1,3 +1,12 @@
+// @title           user-segmentation api
+// @version         1.0
+// @description     API for dynamic user segmentation for testing new functionality
+
+// @host      localhost:8090
+// @BasePath  /
+
+// @securityDefinitions.basic  BasicAuth
+
 package main
 
 import (

@@ -12,8 +12,20 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 )
 
+// HandleAddUser godoc
+// @Summary Add a new user
+// @Description Add a new user to the system
+// @ID addUser
+// @Accept  json
+// @Produce  json
+// @Param user body UserRequest true "User object to be added"
+// @Success 201 {object} UserResponse "Successfully added user"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /user/new [post]
 func (s *ServerAPI) HandleAddUser(w http.ResponseWriter, r *http.Request) {
 	newUser := &UserRequest{}
 	log := s.Log.With(
@@ -49,6 +61,17 @@ func (s *ServerAPI) HandleAddUser(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// HandleAddSegment godoc
+// @Summary Add a new segment
+// @Description Add a new segment to the system
+// @ID addSegment
+// @Accept  json
+// @Produce  json
+// @Param segment body SegmentRequest true "Segment object to be added"
+// @Success 201 {object} SegmentResponse "Successfully added segment"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /segment/new [post]
 func (s *ServerAPI) HandleAddSegment(w http.ResponseWriter, r *http.Request) {
 	newSegment := &SegmentRequest{}
 	log := s.Log.With(
@@ -84,6 +107,17 @@ func (s *ServerAPI) HandleAddSegment(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// HandleAddUserToSegment godoc
+// @Summary Add a new segment
+// @Description Add a new segment to the system
+// @ID addSegment
+// @Accept  json
+// @Produce  json
+// @Param segment body SegmentRequest true "Segment object to be added"
+// @Success 201 {object} SegmentResponse "Successfully added segment"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /segment/new [post]
 func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Request) {
 	newUserSegment := &UserSegmentRequest{}
 	log := s.Log.With(
@@ -124,18 +158,30 @@ func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Reques
 	return
 }
 
+// HandleGetUserSegmentsInfo godoc
+// @Summary Get user's segments information
+// @Description Get information about the segments a user belongs to
+// @ID getUserSegmentsInfo
+// @Produce  json
+// @Param userID path string true "user ID to get list of segments for"
+// @Success 200 {object} GetSegmentsResponse "Successfully retrieved user segments"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /user/segments/{userID} [get]
 func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Request) {
 	user := &UserRequest{}
 	log := s.Log.With(
 		slog.String("request_id", middleware.GetReqID(r.Context())),
 	)
-	if err := render.DecodeJSON(r.Body, &user); err != nil {
-		log.Error("failed to decode request body", logger.Err(err))
+	if uid, err := strconv.ParseUint(chi.URLParam(r, "userID"), 10, 64); err != nil {
+		log.Error("failed to parse user ID", logger.Err(err))
 		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, Error("failed to decode request body"))
+		render.JSON(w, r, Error("failed to parse user ID"))
 		return
+	} else {
+		user.UID = uid
 	}
-	log.Info("request body decoded", slog.Any("request", *user))
+	log.Info("user ID parsed successfully", slog.Any("request", *user))
 	if err := validator.New().Struct(user); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
 		render.Status(r, http.StatusBadRequest)
@@ -159,6 +205,17 @@ func (s *ServerAPI) HandleGetUserSegmentsInfo(w http.ResponseWriter, r *http.Req
 	return
 }
 
+// HandleDeleteUserFromSegment godoc
+// @Summary Remove a user from one or more segments
+// @Description Remove a user from one or more segments
+// @ID deleteUserFromSegment
+// @Accept  json
+// @Produce  json
+// @Param userSegments body UserSegmentRequest true "User and segment association"
+// @Success 200 {object} UserSegmentResponse "Successfully removed user from segment"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /user/segments [delete]
 func (s *ServerAPI) HandleDeleteUserFromSegment(w http.ResponseWriter, r *http.Request) {
 	newUserSegment := &UserSegmentRequest{}
 	log := s.Log.With(
@@ -199,6 +256,17 @@ func (s *ServerAPI) HandleDeleteUserFromSegment(w http.ResponseWriter, r *http.R
 	return
 }
 
+// HandleCascadeDeleteSegment godoc
+// @Summary Cascade delete a segment
+// @Description Cascade delete a segment and remove associated users
+// @ID cascadeDeleteSegment
+// @Accept  json
+// @Produce  json
+// @Param segment body SegmentRequest true "Segment object to delete"
+// @Success 200 {object} SegmentResponse "Successfully deleted segment"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /segment/remove [delete]
 func (s *ServerAPI) HandleCascadeDeleteSegment(w http.ResponseWriter, r *http.Request) {
 	newSegment := &SegmentRequest{}
 	log := s.Log.With(
@@ -233,18 +301,23 @@ func (s *ServerAPI) HandleCascadeDeleteSegment(w http.ResponseWriter, r *http.Re
 	return
 }
 
+// HandleGetSegmentUsersInfo godoc
+// @Summary Get users of a segment
+// @Description Get a list of users belonging to a specific segment
+// @ID getSegmentUsersInfo
+// @Produce  json
+// @Param segmentName path string true "segment Name to get list of its users"
+// @Success 200 {object} GetUsersResponse "Successfully retrieved segment users"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /segment/users/{segmentName} [get]
 func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Request) {
 	segment := &SegmentRequest{}
 	log := s.Log.With(
 		slog.String("request_id", middleware.GetReqID(r.Context())),
 	)
-	if err := render.DecodeJSON(r.Body, &segment); err != nil {
-		log.Error("failed to decode request body", logger.Err(err))
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, Error("failed to decode request body"))
-		return
-	}
-	log.Info("request body decoded", slog.Any("request", *segment))
+	segment.Slug = chi.URLParam(r, "segmentName")
+	log.Info("segment name received", slog.Any("request", *segment))
 	if err := validator.New().Struct(segment); err != nil {
 		log.Error("wrong body structure", logger.Err(err))
 		render.Status(r, http.StatusBadRequest)
@@ -268,6 +341,17 @@ func (s *ServerAPI) HandleGetSegmentUsersInfo(w http.ResponseWriter, r *http.Req
 	return
 }
 
+// HandleCsvReport godoc
+// @Summary Generate CSV report
+// @Description Generate a CSV report for a specific month and year
+// @ID generateCsvReport
+// @Accept  json
+// @Produce  json
+// @Param csvReport body CsvReportRequest true "CSV report request"
+// @Success 200 {object} CsvReportResponse "Successfully generated CSV report"
+// @Failure 400 {object} ResponseStatus "Invalid input data"
+// @Failure 409 {object} ResponseStatus "Query execution failure"
+// @Router /report [post]
 func (s *ServerAPI) HandleCsvReport(w http.ResponseWriter, r *http.Request) {
 	dates := &CsvReportRequest{}
 	log := s.Log.With(
@@ -308,6 +392,15 @@ func (s *ServerAPI) HandleCsvReport(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// HandleDownloadCsv godoc
+// @Summary Download CSV report
+// @Description Download a previously generated CSV report
+// @ID downloadCsvReport
+// @Produce  text/csv
+// @Param fileName path string true "CSV file name to download"
+// @Success 200 {file} file "CSV file for download"
+// @Failure 400 {object} ResponseStatus "Invalid file name"
+// @Router /report/{fileName} [get]
 func (s *ServerAPI) HandleDownloadCsv(w http.ResponseWriter, r *http.Request) {
 	log := s.Log.With(
 		slog.String("request_id", middleware.GetReqID(r.Context())),

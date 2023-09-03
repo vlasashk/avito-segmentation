@@ -3,6 +3,8 @@ package api
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
+	_ "github.com/vlasashk/avito-segmentation/docs"
 	"log/slog"
 	"net/http"
 	"time"
@@ -31,7 +33,7 @@ func Run(log *slog.Logger, server *ServerAPI) {
 	router.Mount("/user", server.userRouter())
 	router.Mount("/segment", server.segmentRouter())
 	router.Mount("/report", server.csvReportRouter())
-
+	router.Mount("/swagger", httpSwagger.WrapHandler)
 	if err := http.ListenAndServe(":"+server.ListenAddr, router); err != nil {
 		log.Error("failed to start server")
 	}
@@ -39,7 +41,7 @@ func Run(log *slog.Logger, server *ServerAPI) {
 
 func (s *ServerAPI) csvReportRouter() http.Handler {
 	router := chi.NewRouter()
-	router.Get("/", s.HandleCsvReport)
+	router.Post("/", s.HandleCsvReport)
 	router.Get("/{fileName}", s.HandleDownloadCsv)
 	return router
 }
@@ -48,7 +50,7 @@ func (s *ServerAPI) userRouter() http.Handler {
 	router := chi.NewRouter()
 	router.Post("/new", s.HandleAddUser)
 	router.Post("/addSegment", s.HandleAddUserToSegment)
-	router.Get("/segments", s.HandleGetUserSegmentsInfo)
+	router.Get("/segments/{userID}", s.HandleGetUserSegmentsInfo)
 	router.Delete("/segments", s.HandleDeleteUserFromSegment)
 	return router
 }
@@ -57,6 +59,6 @@ func (s *ServerAPI) segmentRouter() http.Handler {
 	router := chi.NewRouter()
 	router.Post("/new", s.HandleAddSegment)
 	router.Delete("/remove", s.HandleCascadeDeleteSegment)
-	router.Get("/users", s.HandleGetSegmentUsersInfo)
+	router.Get("/users/{segmentName}", s.HandleGetSegmentUsersInfo)
 	return router
 }
