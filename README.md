@@ -35,6 +35,9 @@ Even if a single segment doesn't exist then the request will be aborted and none
 - Docker for deployment
 
 ### Functionality
+#### Swagger
+Swagger generated documentation will be available after run at `http://localhost:8090/swagger/index.htm` (or different port if .env file was edited)
+
 #### Users manipulation
 - {POST} **/user/new** - Add new user to database.</br> Request Body JSON:
 ```
