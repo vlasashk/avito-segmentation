@@ -54,13 +54,20 @@ func (pg *PostgresDB) CsvHistoryReport(ctx context.Context, csvDates CsvReport, 
 					WHERE (deleted_at BETWEEN $1 AND $2)
 					ORDER BY user_id, segment, status;`
 		var file *os.File
-		if fileTemp, err := os.Create(os.Getenv("CSV_PATH")); err != nil {
+		reportPath := fmt.Sprintf("%s%s_%d_%d.csv", os.Getenv("CSV_PATH"), "report", csvDates.Year, csvDates.Month)
+		if err := os.Mkdir(os.Getenv("CSV_PATH"), 0755); err != nil && !os.IsExist(err) {
+			log.Error("failed to create directory", logger.Err(err))
+			return fmt.Errorf("failed to create directory")
+		}
+		if fileTemp, err := os.Create(reportPath); err != nil {
 			log.Error("failed to create file", logger.Err(err))
-			return fmt.Errorf("failed to begin transaction")
+			return fmt.Errorf("failed to create file")
 		} else {
 			file = fileTemp
 		}
-		defer file.Close()
+		defer func(file *os.File) {
+			_ = file.Close()
+		}(file)
 
 		if rows, err := conn.Query(ctx, query, startDate, endDate); err != nil {
 			log.Error("failed to execute query", logger.Err(err))

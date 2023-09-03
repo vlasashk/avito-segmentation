@@ -30,11 +30,18 @@ func Run(log *slog.Logger, server *ServerAPI) {
 	})
 	router.Mount("/user", server.userRouter())
 	router.Mount("/segment", server.segmentRouter())
-	router.Get("/report", server.HandleCsvReport)
+	router.Mount("/report", server.csvReportRouter())
 
 	if err := http.ListenAndServe(":"+server.ListenAddr, router); err != nil {
 		log.Error("failed to start server")
 	}
+}
+
+func (s *ServerAPI) csvReportRouter() http.Handler {
+	router := chi.NewRouter()
+	router.Get("/", s.HandleCsvReport)
+	router.Get("/{fileName}", s.HandleDownloadCsv)
+	return router
 }
 
 func (s *ServerAPI) userRouter() http.Handler {

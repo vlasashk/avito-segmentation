@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -295,12 +297,37 @@ func (s *ServerAPI) HandleCsvReport(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, Error(err.Error()))
 		return
 	}
+	url := fmt.Sprintf("http://localhost:%s/report/%s_%d_%d.csv", os.Getenv("PORT"), "report", dates.Year, dates.Month)
 	response := CsvReportResponse{
 		ResponseStatus: OK(),
-		CsvUrl:         os.Getenv("CSV_PATH"),
+		CsvUrl:         url,
 	}
 	log.Info("query successfully executed", slog.Any("request", response))
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
+	return
+}
+
+func (s *ServerAPI) HandleDownloadCsv(w http.ResponseWriter, r *http.Request) {
+	log := s.Log.With(
+		slog.String("request_id", middleware.GetReqID(r.Context())),
+	)
+	fileName := fmt.Sprintf("%s%s.csv", os.Getenv("CSV_PATH"), chi.URLParam(r, "fileName"))
+	if len(fileName) < 1 {
+		log.Error("file name is empty", logger.Err(fmt.Errorf("file name is empty")))
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, Error("file name is empty"))
+		return
+	}
+	log.Info("file name acquired", slog.Any("request", fileName))
+	if _, err := os.Stat(fileName); errors.Is(err, os.ErrNotExist) {
+		log.Error("file doesn't exist", logger.Err(err))
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, Error("file doesn't exist"))
+		return
+	}
+	log.Info("file successfully found", slog.Any("request", fileName))
+	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	http.ServeFile(w, r, fileName)
 	return
 }
