@@ -83,10 +83,11 @@ This method will permanently delete segment and all it's relations between user-
 }
 ```
 #### CSV Report
-- {GET} **/report** - Return the link to csv file with report for chosen month (currently returns local path).</br> Request Body JSON:
+- {GET} **/report** - Return the link to csv file with report for chosen month.</br> Request Body JSON:
 ```
 {
     "year": 2023,
     "month": 9
 }
 ```
+- {GET} **/report/{fileName}** - Download the csv file with report for chosen month.</br> Request Body in not required.
