@@ -24,6 +24,8 @@ Even if a single segment doesn't exist then the request will be aborted and none
 - If segment is already assigned to user then the request will be aborted and none of the segments from the list will be added to a user
 - Deleting segment from database will cascade delete it from every user and history for this segment won't be available
 - Deleting segment from a user doesn't delete record from database, instead of deletion it marks `deleted_at` field with current date
+- In order to remove user from segment - all segments from the request must be present in database
+- If user is not part of some segments from the removal list then the removal request will be aborted and none of the segments from the list will be removed from a user
 
 ### Tools used
 - PostgreSQL as database
