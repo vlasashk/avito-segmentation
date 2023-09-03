@@ -216,7 +216,7 @@ func (pg *PostgresDB) AddUserToSegments(ctx context.Context, userSegment UserSeg
 		for i := 0; i < len(userSegment.SegmentSlug); i++ {
 			if err := conn.QueryRow(ctx, queryCheckSegment, userSegment.SegmentSlug[i]).Scan(&segmentID); err != nil {
 				log.Error(fmt.Sprintf("segment '%v' doesn't exist", userSegment.SegmentSlug), logger.Err(err))
-				return fmt.Errorf("segment '%v' doesn't exist", userSegment.SegmentSlug)
+				return fmt.Errorf("segment '%v' doesn't exist", userSegment.SegmentSlug[i])
 			}
 			segmentSlice = append(segmentSlice, segmentID)
 		}

@@ -117,7 +117,7 @@ func (s *ServerAPI) HandleAddSegment(w http.ResponseWriter, r *http.Request) {
 // @Success 201 {object} UserSegmentRequest "Successfully linked segment to a user"
 // @Failure 400 {object} ResponseStatus "Invalid input data"
 // @Failure 409 {object} ResponseStatus "Query execution failure"
-// @Router /segment/addSegment [post]
+// @Router /user/addSegment [post]
 func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Request) {
 	newUserSegment := &UserSegmentRequest{}
 	log := s.Log.With(
