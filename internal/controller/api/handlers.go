@@ -108,16 +108,16 @@ func (s *ServerAPI) HandleAddSegment(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleAddUserToSegment godoc
-// @Summary Add a new segment
-// @Description Add a new segment to the system
-// @ID addSegment
+// @Summary Add user ti a segment
+// @Description Link user to segments
+// @ID addUserToSegment
 // @Accept  json
 // @Produce  json
-// @Param segment body SegmentRequest true "Segment object to be added"
-// @Success 201 {object} SegmentResponse "Successfully added segment"
+// @Param segment body UserSegmentRequest true "Segment object to be added"
+// @Success 201 {object} UserSegmentRequest "Successfully linked segment to a user"
 // @Failure 400 {object} ResponseStatus "Invalid input data"
 // @Failure 409 {object} ResponseStatus "Query execution failure"
-// @Router /segment/new [post]
+// @Router /segment/addSegment [post]
 func (s *ServerAPI) HandleAddUserToSegment(w http.ResponseWriter, r *http.Request) {
 	newUserSegment := &UserSegmentRequest{}
 	log := s.Log.With(

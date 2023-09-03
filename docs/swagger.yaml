@@ -218,6 +218,35 @@ paths:
           schema:
             $ref: '#/definitions/internal_controller_api.ResponseStatus'
       summary: Download CSV report
+  /segment/addSegment:
+    post:
+      consumes:
+      - application/json
+      description: Link user to segments
+      operationId: addUserToSegment
+      parameters:
+      - description: Segment object to be added
+        in: body
+        name: segment
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_api.UserSegmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully linked segment to a user
+          schema:
+            $ref: '#/definitions/internal_controller_api.UserSegmentRequest'
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/internal_controller_api.ResponseStatus'
+        "409":
+          description: Query execution failure
+          schema:
+            $ref: '#/definitions/internal_controller_api.ResponseStatus'
+      summary: Add user ti a segment
   /segment/new:
     post:
       consumes:

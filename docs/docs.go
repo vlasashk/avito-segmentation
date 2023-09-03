@@ -92,6 +92,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/segment/addSegment": {
+            "post": {
+                "description": "Link user to segments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add user ti a segment",
+                "operationId": "addUserToSegment",
+                "parameters": [
+                    {
+                        "description": "Segment object to be added",
+                        "name": "segment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_api.UserSegmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully linked segment to a user",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_api.UserSegmentRequest"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_api.ResponseStatus"
+                        }
+                    },
+                    "409": {
+                        "description": "Query execution failure",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_api.ResponseStatus"
+                        }
+                    }
+                }
+            }
+        },
         "/segment/new": {
             "post": {
                 "description": "Add a new segment to the system",
