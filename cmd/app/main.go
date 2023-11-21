@@ -11,9 +11,9 @@ package main
 
 import (
 	"context"
-	"github.com/vlasashk/avito-segmentation/internal/controller/api"
-	"github.com/vlasashk/avito-segmentation/internal/model/logger"
-	"github.com/vlasashk/avito-segmentation/internal/model/storage"
+	"github.com/vlasashk/user-segmentation/internal/controller/api"
+	"github.com/vlasashk/user-segmentation/internal/model/logger"
+	"github.com/vlasashk/user-segmentation/internal/model/storage"
 	"os"
 )
 

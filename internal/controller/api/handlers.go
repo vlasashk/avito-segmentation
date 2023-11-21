@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
-	"github.com/vlasashk/avito-segmentation/internal/model/logger"
+	"github.com/vlasashk/user-segmentation/internal/model/logger"
 	"log/slog"
 	"net/http"
 	"os"

@@ -1,4 +1,4 @@
-module github.com/vlasashk/avito-segmentation
+module github.com/vlasashk/user-segmentation
 
 go 1.21.0
 

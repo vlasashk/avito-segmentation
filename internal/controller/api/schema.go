@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"github.com/vlasashk/avito-segmentation/internal/model/storage"
+	"github.com/vlasashk/user-segmentation/internal/model/storage"
 	"log/slog"
 )
 

@@ -4,7 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
-	_ "github.com/vlasashk/avito-segmentation/docs"
+	_ "github.com/vlasashk/user-segmentation/docs"
 	"log/slog"
 	"net/http"
 	"time"

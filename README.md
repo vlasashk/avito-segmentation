@@ -1,4 +1,4 @@
-# avito-segmentation
+# user-segmentation
 
 ## Build
 #### Prerequisites
@@ -6,8 +6,8 @@
 
 1. Clone project:
 ```
-git clone https://github.com/vlasashk/avito-segmentation.git
-cd avito-segmentation
+git clone https://github.com/vlasashk/user-segmentation.git
+cd user-segmentation
 ```
 2. Run:
 ```
